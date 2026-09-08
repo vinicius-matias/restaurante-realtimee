@@ -11,6 +11,14 @@ Um aplicativo web *full-stack* desenvolvido em tempo real para otimizar o fluxo 
 
 ---
 
+## 📸 Demonstração do Sistema
+
+| Tela do Garçom (Mobile) | Painel da Cozinha (Desktop) |
+| :---: | :---: |
+| ![Garçom](img/garcom.png) | ![Cozinha](img/cozinha.png) |
+
+---
+
 ## 🚀 Funcionalidades Principais
 
 ### 📱 Módulo do Garçom (`garcom.html`)
@@ -48,6 +56,9 @@ Um aplicativo web *full-stack* desenvolvido em tempo real para otimizar o fluxo 
 ├── server.js              # Servidor HTTP e lógica do Socket.io
 ├── db.json                # Banco de dados local em JSON (criado automaticamente)
 ├── package.json           # Dependências do projeto
+├── img/                   # Imagens de demonstração do sistema
+│   ├── garcom.png
+│   └── cozinha.png
 └── public/
     ├── garcom.html        # Interface do aplicativo móvel para garçons
     └── cozinha.html       # Interface do painel de controle da cozinha

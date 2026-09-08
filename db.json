@@ -6,7 +6,19 @@
     "itens": "suco de fruta",
     "observacao": "",
     "horario": "10:42",
-    "status": "preparo",
-    "timestamp": 1788874953329
+    "status": "concluido",
+    "timestamp": 1788874953329,
+    "horarioConclusao": "11:34"
+  },
+  {
+    "id": 1788877967911,
+    "garcom": "claudio",
+    "mesa": "8",
+    "itens": "j",
+    "observacao": "",
+    "horario": "11:32",
+    "status": "concluido",
+    "timestamp": 1788878061683,
+    "horarioConclusao": "11:34"
   }
 ]
