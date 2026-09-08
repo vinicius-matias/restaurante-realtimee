@@ -15,7 +15,7 @@ Um aplicativo web *full-stack* desenvolvido em tempo real para otimizar o fluxo 
 
 | Tela do Garçom (Mobile) | Painel da Cozinha (Desktop) |
 | :---: | :---: |
-| ![Garçom](img/garcom.png) | ![Cozinha](img/cozinha.png) |
+| <img src="img/garcom.png" width="300" alt="Garçom"> | <img src="img/cozinha.png" width="500" alt="Cozinha"> |
 
 ---
 
