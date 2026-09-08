@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR" translate="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="google" content="notranslate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garçom - Anotar Pedido</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.65)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1350&q=80') no-repeat center center fixed;
+      background-size: cover;
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      min-height: 100vh; 
+      padding: 16px; 
+    }
+
+    .container { width: 100%; max-width: 440px; }
+
+    .painel-prontos {
+      display: none;
+      background: rgba(22, 163, 74, 0.95);
+      backdrop-filter: blur(8px);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      color: white;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .item-pronto {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    .card-form { 
+      background: rgba(255, 255, 255, 0.95); 
+      backdrop-filter: blur(12px);
+      padding: 28px 22px; 
+      border-radius: 16px; 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25); 
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      margin-bottom: 20px;
+    }
+    h2 { font-family: 'Playfair Display', serif; color: #1e293b; margin-bottom: 18px; text-align: center; font-size: 1.6rem; font-weight: 700; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; color: #475569; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.92rem; font-family: 'Plus Jakarta Sans', sans-serif; outline: none; background: #f8fafc; color: #0f172a; }
+    
+    button[type="submit"] { width: 100%; background-color: #0284c7; color: #ffffff; border: none; padding: 15px; font-size: 0.88rem; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border-radius: 10px; cursor: pointer; }
+    
+    .btn-testar { width: 100%; background: transparent; color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.3); padding: 8px; border-radius: 8px; font-size: 0.75rem; margin-top: 10px; cursor: pointer; }
+
+    /* Seção de Meus Pedidos Ativos */
+    .meus-pedidos { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; color: white; border: 1px solid rgba(255,255,255,0.1); }
+    .meus-pedidos h3 { font-size: 1rem; margin-bottom: 12px; font-family: 'Playfair Display', serif; color: #38bdf8; }
+    .card-meu-pedido { background: rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 4px solid #f59e0b; }
+    .card-meu-pedido.preparo { border-left-color: #0284c7; }
+    .badge-status { font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; display: inline-block; margin-bottom: 6px; }
+    .status-aberto { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .status-preparo { background: rgba(2, 132, 199, 0.2); color: #38bdf8; }
+    .btn-cancelar { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .btn-cancelar:disabled { background: #64748b; opacity: 0.6; cursor: not-allowed; }
+  </style>
+</head>
+<body class="notranslate">
+  <div class="container">
+    
+    <div id="painelProntos" class="painel-prontos">
+      <h3 style="font-size:0.95rem;">🔔 Pedidos Prontos para Servir:</h3>
+      <div id="listaProntos"></div>
+    </div>
+
+    <div class="card-form">
+      <h2>Novo Pedido</h2>
+      <form id="formPedido">
+        <div class="form-group">
+          <label for="garcom">Seu Nome (Garçom)</label>
+          <input type="text" id="garcom" placeholder="Ex: João" required>
+        </div>
+        <div class="form-group">
+          <label for="mesa">Número da Mesa</label>
+          <input type="number" id="mesa" placeholder="Ex: 05" required>
+        </div>
+        <div class="form-group">
+          <label for="itens">Itens do Pedido</label>
+          <textarea id="itens" rows="3" placeholder="Ex: 1x Picanha&#10;1x Suco de Laranja" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="obs">Observações (Opcional)</label>
+          <input type="text" id="obs" placeholder="Ex: Sem cebola, ponto do cliente">
+        </div>
+        <button type="submit" class="notranslate">Enviar para Cozinha</button>
+      </form>
+    </div>
+
+    <div class="meus-pedidos">
+      <h3>📋 Meus Pedidos em Andamento</h3>
+      <div id="listaMeusPedidos">
+        <p style="font-size:0.8rem; color:#94a3b8">Nenhum pedido ativo no momento.</p>
+      </div>
+    </div>
+
+    <button type="button" class="btn-testar" onclick="testarBipManualmente()">🔊 Testar Bip / Ativar Som do Celular</button>
+  </div>
+
+  <script>
+    const socket = io();
+    const form = document.getElementById('formPedido');
+    const garcomInput = document.getElementById('garcom');
+    const painelProntos = document.getElementById('painelProntos');
+    const listaProntos = document.getElementById('listaProntos');
+    const listaMeusPedidos = document.getElementById('listaMeusPedidos');
+    let audioCtx = null;
+    let todosPedidos = [];
+
+    if (localStorage.getItem('nomeGarcom')) {
+      garcomInput.value = localStorage.getItem('nomeGarcom');
+    }
+
+    function inicializarAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    document.addEventListener('touchstart', inicializarAudio, { once: true });
+    document.addEventListener('click', inicializarAudio, { once: true });
+
+    function dispararAlertaCelular() {
+      inicializarAudio();
+      if ("vibrate" in navigator) navigator.vibrate([300, 150, 300]);
+      if (audioCtx) {
+        try {
+          const agora = audioCtx.currentTime;
+          const osc1 = audioCtx.createOscillator();
+          const gain1 = audioCtx.createGain();
+          osc1.connect(gain1); gain1.connect(audioCtx.destination);
+          osc1.frequency.setValueAtTime(600, agora); gain1.gain.setValueAtTime(0.5, agora);
+          osc1.start(agora); osc1.stop(agora + 0.2);
+
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.connect(gain2); gain2.connect(audioCtx.destination);
+          osc2.frequency.setValueAtTime(800, agora + 0.25); gain2.gain.setValueAtTime(0.5, agora + 0.25);
+          osc2.start(agora + 0.25); osc2.stop(agora + 0.45);
+        } catch(e){}
+      }
+    }
+
+    function testarBipManualmente() {
+      dispararAlertaCelular();
+      alert("O som/vibração do celular está ativado!");
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      inicializarAudio();
+      const nomeGarcom = garcomInput.value.trim();
+      localStorage.setItem('nomeGarcom', nomeGarcom);
+
+      const pedido = {
+        id: Date.now(),
+        garcom: nomeGarcom,
+        mesa: document.getElementById('mesa').value,
+        itens: document.getElementById('itens').value,
+        observacao: document.getElementById('obs').value,
+        horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      socket.emit('novo_pedido', pedido);
+      document.getElementById('mesa').value = '';
+      document.getElementById('itens').value = '';
+      document.getElementById('obs').value = '';
+    });
+
+    function cancelarPedido(id) {
+      if (confirm('Tem certeza que deseja cancelar este pedido?')) {
+        socket.emit('cancelar_pedido', id);
+      }
+    }
+
+    function renderizarMeusPedidos() {
+      const meuNome = (garcomInput.value || '').trim().toLowerCase();
+      if (!meuNome) return;
+
+      const meusAtivos = todosPedidos.filter(p => 
+        (p.garcom || '').trim().toLowerCase() === meuNome && 
+        (p.status === 'aberto' || p.status === 'preparo')
+      );
+
+      if (meusAtivos.length === 0) {
+        listaMeusPedidos.innerHTML = '<p style="font-size:0.8rem; color:#94a3b8">Nenhum pedido ativo no momento.</p>';
+        return;
+      }
+
+      listaMeusPedidos.innerHTML = meusAtivos.map(p => `
+        <div class="card-meu-pedido ${p.status === 'preparo' ? 'preparo' : ''}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>Mesa ${p.mesa}</strong>
+            <span class="badge-status ${p.status === 'preparo' ? 'status-preparo' : 'status-aberto'}">
+              ${p.status === 'preparo' ? '👨‍🍳 Em Preparo' : '⏳ Na Fila'}
+            </span>
+          </div>
+          <div style="font-size:0.85rem; color:#e2e8f0; margin:6px 0;">${p.itens.replace(/\n/g, ', ')}</div>
+          ${p.observacao ? `<div style="font-size:0.75rem; color:#fbbf24;">⚠️ ${p.observacao}</div>` : ''}
+          ${p.status === 'aberto' 
+            ? `<button class="btn-cancelar" onclick="cancelarPedido(${p.id})">❌ Cancelar Pedido</button>` 
+            : `<button class="btn-cancelar" disabled>🔒 Em preparo (Não editável)</button>`
+          }
+        </div>
+      `).join('');
+    }
+
+    garcomInput.addEventListener('input', renderizarMeusPedidos);
+
+    socket.on('pedidos_atualizados', (pedidos) => {
+      todosPedidos = pedidos;
+      renderizarMeusPedidos();
+    });
+
+    socket.on('notificacao_garcom', (pedido) => {
+      const meuNome = (garcomInput.value || '').trim().toLowerCase();
+      const garcomPedido = (pedido.garcom || '').trim().toLowerCase();
+
+      if (!meuNome || meuNome === garcomPedido) {
+        dispararAlertaCelular();
+        painelProntos.style.display = 'block';
+
+        const item = document.createElement('div');
+        item.className = 'item-pronto';
+        item.id = `aviso-${pedido.id}`;
+        item.innerHTML = `
+          <span>Mesa ${pedido.mesa} - ${pedido.itens.split('\n')[0]}</span>
+          <button style="background:white; color:#16a34a; border:none; padding:4px 10px; border-radius:6px; font-weight:700; cursor:pointer;" onclick="document.getElementById('aviso-${pedido.id}').remove()">OK</button>
+        `;
+        listaProntos.appendChild(item);
+      }
+    });
+  </script>
+</body>
+</html>
